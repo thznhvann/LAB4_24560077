@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Picture Upload</title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+        .card {
+            width: 100%;
+            max-width: 680px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        .upload-card {
+            max-width: 520px;
+            text-align: center;
+        }
+        h1 { margin: 0 0 8px; font-size: 24px; color: #1e293b; }
+        .subtitle { margin: 0 0 24px; color: #64748b; font-size: 14px; }
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 36px 20px;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+            background: #f8fafc;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+        .drop-zone input[type="file"] { display: none; }
+        .drop-title { font-weight: bold; color: #334155; margin-bottom: 6px; }
+        .drop-hint { font-size: 13px; color: #94a3b8; }
+        .selected-file {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #4f46e5;
+            font-weight: bold;
+            word-break: break-all;
+        }
+        .btn-upload {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: #5b61f6;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-upload:hover { background: #4f46e5; }
+        .status-msg {
+            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        .status-msg.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-msg.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .gallery-header h2 { margin: 0; font-size: 18px; color: #1e293b; }
+        .file-count { font-size: 13px; color: #64748b; }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        .file-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+        .file-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            background: #f1f5f9;
+            cursor: pointer;
+        }
+        .file-meta {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .file-name {
+            font-size: 12px;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: bold;
+        }
+        .file-size {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .file-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .link-download {
+            font-size: 12px;
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .link-download:hover { text-decoration: underline; }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+        }
+        .btn-delete:hover { text-decoration: underline; }
+        .empty-text { color: #94a3b8; font-size: 14px; text-align: center; padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="card upload-card">
+        <h1>Profile Picture</h1>
+        <p class="subtitle">Select an image to upload as your avatar.</p>
+
+        <div id="dropZone" class="drop-zone">
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+            <div class="drop-title">Choose an image or drag &amp; drop</div>
+            <div class="drop-hint">JPG, PNG, WEBP up to 2MB</div>
+            <div id="selectedFile" class="selected-file"></div>
+        </div>
+
+        <button id="uploadBtn" class="btn-upload">Upload Avatar</button>
+        <div id="statusMsg" class="status-msg"></div>
+    </div>
+
+    <div class="card">
+        <div class="gallery-header">
+            <h2>Uploaded Files</h2>
+            <span id="fileCount" class="file-count">0 files</span>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+        <div id="emptyText" class="empty-text" style="display: none;">No files uploaded yet.</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api/v1';
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileText = document.getElementById('selectedFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const galleryGrid = document.getElementById('galleryGrid');
+        const fileCount = document.getElementById('fileCount');
+        const emptyText = document.getElementById('emptyText');
+
+        let chosenFile = null;
+
+        function showStatus(message, isError = false) {
+            statusMsg.textContent = message;
+            statusMsg.className = 'status-msg ' + (isError ? 'error' : 'success');
+        }
+
+        function formatSize(bytes) {
+            return (bytes / 1024).toFixed(1) + ' KB';
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                chosenFile = fileInput.files[0];
+                selectedFileText.textContent = chosenFile.name;
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                chosenFile = e.dataTransfer.files[0];
+                selectedFileText.textContent = chosenFile.name;
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!chosenFile) {
+                showStatus('Please choose an image file!', true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', chosenFile);
+
+            try {
+                const res = await fetch(`${API_BASE}/upload-avatar`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`);
+
+                showStatus(result.message, false);
+                chosenFile = null;
+                fileInput.value = '';
+                selectedFileText.textContent = '';
+                await loadGallery();
+            } catch (error) {
+                showStatus(error.message, true);
+            }
+        });
+
+        async function loadGallery() {
+            try {
+                const res = await fetch(`${API_BASE}/files`);
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`);
+
+                const files = result.data || [];
+                fileCount.textContent = `${files.length} files`;
+                galleryGrid.innerHTML = '';
+
+                if (files.length === 0) {
+                    emptyText.style.display = 'block';
+                    return;
+                }
+                emptyText.style.display = 'none';
+
+                files.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'file-item';
+                    card.innerHTML = `
+                        <a href="${file.url}" target="_blank">
+                            <img src="${file.url}" alt="${file.filename}">
+                        </a>
+                        <div class="file-meta">
+                            <div class="file-name" title="${file.filename}">${file.filename}</div>
+                            <div class="file-size">${formatSize(file.size)}</div>
+                            <div class="file-actions">
+                                <a class="link-download" href="${file.downloadUrl}">Download</a>
+                                <button class="btn-delete" onclick="deleteFile('${file.filename}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    galleryGrid.appendChild(card);
+                });
+            } catch (error) {
+                showStatus(`Could not load gallery: ${error.message}`, true);
+            }
+        }
+
+        async function deleteFile(filename) {
+            try {
+                const res = await fetch(`${API_BASE}/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`);
+
+                showStatus(result.message, false);
+                await loadGallery();
+            } catch (error) {
+                showStatus(error.message, true);
+            }
+        }
+
+        loadGallery();
+    </script>
+</body>
+</html>

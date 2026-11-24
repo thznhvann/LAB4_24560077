@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 30px; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { margin-top: 0; }
+        .error-box { display: none; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .form-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        .form-row input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        .form-row button { padding: 8px 14px; cursor: pointer; }
+        .filter-row { margin-bottom: 15px; }
+        .filter-row select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #1f4e78; color: #fff; }
+        .btn-edit { background-color: #f0ad4e; color: #fff; border: none; padding: 6px 10px; cursor: pointer; border-radius: 3px; margin-right: 4px; }
+        .btn-delete { background-color: #d9534f; color: #fff; border: none; padding: 6px 10px; cursor: pointer; border-radius: 3px; }
+        .btn-save { background-color: #5cb85c; color: #fff; border: none; padding: 6px 10px; cursor: pointer; border-radius: 3px; margin-right: 4px; }
+        .btn-cancel { background-color: #6c757d; color: #fff; border: none; padding: 6px 10px; cursor: pointer; border-radius: 3px; }
+        .edit-input { width: 90%; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Management (Client Web UI)</h1>
+        <div id="errorBox" class="error-box"></div>
+
+        <form id="addForm" class="form-row">
+            <input type="text" id="nameInput" placeholder="Product name" required>
+            <input type="number" id="priceInput" placeholder="Price (VND)" required>
+            <input type="text" id="categoryInput" placeholder="Category">
+            <button type="submit">Add product</button>
+        </form>
+
+        <div class="filter-row">
+            <label for="categoryFilter">Filter by Category: </label>
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price (VND)</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody"></tbody>
+        </table>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
